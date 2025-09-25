@@ -25,6 +25,12 @@ def _set_sqlite_pragmas(dbapi_con, _):
     cur.close()
 
 
+# Ensure models are imported so metadata is populated before table creation
+try:
+    from . import models
+except Exception as exc:
+    logging.warning("[db] Could not import models pre-create_all: %s", exc)
+
 SQLModel.metadata.create_all(engine)
 
 
@@ -38,42 +44,42 @@ def _lightweight_migrate():
     """
     try:
         with engine.connect() as conn:
-            result = conn.exec_driver_sql("PRAGMA table_info(beer);")
-            existing_cols = {row[1] for row in result.fetchall()}
-            if "image" not in existing_cols:
-                logging.info("[migrate] Adding missing 'image' column to beer table")
-                conn.exec_driver_sql("ALTER TABLE beer ADD COLUMN image VARCHAR")
-            if "image_id" not in existing_cols:
-                logging.info("[migrate] Adding 'image_id' column to beer table")
-                conn.exec_driver_sql("ALTER TABLE beer ADD COLUMN image_id INTEGER")
+            # Determine existing tables
+            tables = {r[0] for r in conn.exec_driver_sql("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+            if "beer" not in tables:
+                logging.info("[migrate] 'beer' table missing; running create_all again")
+                SQLModel.metadata.create_all(engine)
+                tables = {r[0] for r in conn.exec_driver_sql("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
 
-            conn.exec_driver_sql(
-                "CREATE TABLE IF NOT EXISTS displaysettings (id INTEGER PRIMARY KEY, title VARCHAR, logo VARCHAR, logo_image_id INTEGER)"
-            )
-            ds_cols = {
-                row[1]
-                for row in conn.exec_driver_sql(
-                    "PRAGMA table_info(displaysettings);"
-                ).fetchall()
-            }
+            if "beer" in tables:
+                result = conn.exec_driver_sql("PRAGMA table_info(beer);")
+                existing_cols = {row[1] for row in result.fetchall()}
+                if "image" not in existing_cols:
+                    try:
+                        logging.info("[migrate] Adding 'image' column to beer")
+                        conn.exec_driver_sql("ALTER TABLE beer ADD COLUMN image VARCHAR")
+                    except SQLAlchemyError as e:
+                        logging.warning("[migrate] Could not add image column: %s", e)
+                if "image_id" not in existing_cols:
+                    try:
+                        logging.info("[migrate] Adding 'image_id' column to beer")
+                        conn.exec_driver_sql("ALTER TABLE beer ADD COLUMN image_id INTEGER")
+                    except SQLAlchemyError as e:
+                        logging.warning("[migrate] Could not add image_id column: %s", e)
+
+            conn.exec_driver_sql("CREATE TABLE IF NOT EXISTS displaysettings (id INTEGER PRIMARY KEY, title VARCHAR, logo VARCHAR, logo_image_id INTEGER)")
+            ds_cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(displaysettings);").fetchall()}
             if "logo_image_id" not in ds_cols:
-                logging.info(
-                    "[migrate] Adding 'logo_image_id' column to displaysettings table"
-                )
-                conn.exec_driver_sql(
-                    "ALTER TABLE displaysettings ADD COLUMN logo_image_id INTEGER"
-                )
-            row = conn.exec_driver_sql(
-                "SELECT id FROM displaysettings WHERE id=1"
-            ).fetchone()
+                try:
+                    logging.info("[migrate] Adding 'logo_image_id' column to displaysettings")
+                    conn.exec_driver_sql("ALTER TABLE displaysettings ADD COLUMN logo_image_id INTEGER")
+                except SQLAlchemyError as e:
+                    logging.warning("[migrate] Could not add logo_image_id: %s", e)
+            row = conn.exec_driver_sql("SELECT id FROM displaysettings WHERE id=1").fetchone()
             if not row:
-                conn.exec_driver_sql(
-                    "INSERT INTO displaysettings (id, title, logo, logo_image_id) VALUES (1, 'What’s on Tap', NULL, NULL)"
-                )
+                conn.exec_driver_sql("INSERT INTO displaysettings (id, title, logo, logo_image_id) VALUES (1, 'What’s on Tap', NULL, NULL)")
 
-            conn.exec_driver_sql(
-                "CREATE TABLE IF NOT EXISTS storedimage (id INTEGER PRIMARY KEY, kind VARCHAR, ref_id INTEGER, content_type VARCHAR, data BLOB, created_at VARCHAR)"
-            )
+            conn.exec_driver_sql("CREATE TABLE IF NOT EXISTS storedimage (id INTEGER PRIMARY KEY, kind VARCHAR, ref_id INTEGER, content_type VARCHAR, data BLOB, created_at VARCHAR)")
     except (SQLAlchemyError, OSError) as exc:
         logging.warning(
             "Lightweight migration skipped or failed (%s): %s", type(exc).__name__, exc
