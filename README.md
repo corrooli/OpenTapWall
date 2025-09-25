@@ -58,12 +58,6 @@ docker run --rm -it \
 ### Data Persistence
 All persistent state (SQLite file + uploaded images) lives under `/data` (mapped to your host `opentap_data` directory). Back it up by copying that folder. If you remove the `opentap.db` file, a fresh sample will be generated on the next container start.
 
-### Adding Python Packages
-Add to `requirements.txt` then rebuild the image:
-```
-docker build -t opentapwall:latest .
-```
-
 ## API Summary
 - `GET /beers/` list beers
 - `POST /beers/` create via JSON
