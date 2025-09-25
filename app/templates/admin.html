@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <title>OpenTapWall Admin</title>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.0/css/pico.min.css" />
+  <style>
+    body { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+    header { display:flex; align-items:center; justify-content:space-between; }
+    .grid { display:grid; gap:1rem; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); }
+    .beer-card { position:relative; overflow:hidden; background:linear-gradient(145deg,#222,#111); border:1px solid #333; border-radius:14px; padding:1rem; }
+    .beer-card img { width:100%; aspect-ratio: 3/4; object-fit:cover; border-radius:10px; margin-bottom:.5rem; background:#222; }
+    .beer-meta { font-size:.75rem; letter-spacing:.5px; opacity:.75; }
+    form.inline { display:flex; flex-direction:column; gap:.4rem; }
+    form.inline input[type="text"], form.inline input[type="number"] { width:100%; }
+    .upload-zone { border:2px dashed #555; padding:.5rem; text-align:center; border-radius:8px; cursor:pointer; font-size:.8rem; }
+    .upload-zone:hover { background:#1e1e1e; }
+    .actions { display:flex; gap:.4rem; flex-wrap:wrap; }
+    #createForm { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.5rem; }
+    #createForm fieldset { grid-column: 1 / -1; }
+    .tag { background:#444; padding:.15rem .5rem; border-radius:999px; font-size:.65rem; margin-right:.25rem; }
+    .flex { display:flex; }
+    .justify-between { justify-content:space-between; }
+    nav a { font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 style="margin:0;">Admin – OpenTap</h1>
+    <nav><a href="/" role="button" class="secondary">View Wall</a></nav>
+  </header>
+  <hr />
+
+  <h2>Display Settings</h2>
+  <form id="settingsForm" style="max-width:520px;display:grid;gap:.5rem;grid-template-columns:1fr auto;align-items:center;">
+    <input name="title" type="text" placeholder="Wall Title" value="{{ settings.title if settings else '' }}" style="grid-column:1/ span 2;" />
+    <div style="display:flex;align-items:center;gap:1rem;grid-column:1/ span 2;">
+      {% if settings and settings.logo_image_id %}
+        <img src="/images/{{ settings.logo_image_id }}" alt="logo" style="height:60px;width:auto;object-fit:contain;" />
+      {% else %}
+        <span style="font-size:.8rem;opacity:.6;">No logo uploaded</span>
+      {% endif %}
+      <label class="upload-zone" style="margin:0;flex:1;">Upload Logo<input id="logoInput" type="file" hidden /></label>
+    </div>
+    <button type="submit" style="grid-column:1/ span 2;">Save Settings</button>
+  </form>
+
+  <h2 style="margin-top:2rem;">Create Beer</h2>
+  <form id="createForm">
+    <input name="tap_number" type="number" placeholder="Tap #" required />
+    <input name="name" type="text" placeholder="Name" required />
+    <input name="style" type="text" placeholder="Style" />
+    <input name="abv" step="0.1" type="number" placeholder="ABV %" />
+    <input name="ibu" type="number" placeholder="IBU" />
+    <input name="ebc" type="number" placeholder="EBC" />
+    <button type="submit">Create</button>
+  </form>
+
+  <h2 style="margin-top:2rem;">Existing Beers</h2>
+  <div id="beers" class="grid"></div>
+
+  <template id="beerCardTpl">
+    <div class="beer-card" data-id="">
+      <img data-role="image" alt="Beer image" />
+      <strong data-role="title"></strong>
+      <div class="beer-meta" data-role="meta"></div>
+      <div class="actions">
+        <form class="inline update-form"></form>
+        <div class="upload-zone" data-role="upload">Upload Image<input type="file" hidden /></div>
+        <button class="secondary outline" data-role="delete" style="width:100%;">Delete</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const apiBase = '/beers';
+    async function saveSettings(payload){
+      const resp = await fetch('/settings', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      if(!resp.ok) throw new Error(await resp.text());
+      return resp.json();
+    }
+    async function uploadLogo(file){
+      const fd = new FormData();
+      fd.append('file', file);
+      const resp = await fetch('/settings/logo', { method:'POST', body: fd });
+      if(!resp.ok) throw new Error(await resp.text());
+      return resp.json();
+    }
+    async function fetchBeers() {
+      const r = await fetch(apiBase + '/');
+      return r.json();
+    }
+    function el(sel, root=document){ return root.querySelector(sel); }
+    function fmt(beer){
+      return `ABV ${beer.abv ?? '-'} · IBU ${beer.ibu ?? '-'} · EBC ${beer.ebc ?? '-'}`;
+    }
+    async function render() {
+      const list = await fetchBeers();
+      const host = el('#beers');
+      host.innerHTML = '';
+      const tpl = el('#beerCardTpl');
+      list.forEach(beer => {
+        const node = tpl.content.cloneNode(true);
+        const card = node.querySelector('.beer-card');
+        card.dataset.id = beer.id;
+        const title = node.querySelector('[data-role="title"]');
+        title.textContent = `${beer.tap_number} – ${beer.name}`;
+        const meta = node.querySelector('[data-role="meta"]');
+        meta.textContent = fmt(beer);
+  const imgEl = node.querySelector('[data-role="image"]');
+  imgEl.src = beer.image_id ? `/images/${beer.image_id}` : 'https://placehold.co/400x520?text=No+Image';
+        const updateForm = node.querySelector('.update-form');
+        updateForm.innerHTML = `
+          <input name="tap_number" type="number" value="${beer.tap_number}" />
+          <input name="name" type="text" value="${beer.name}" />
+          <input name="style" type="text" value="${beer.style ?? ''}" />
+          <button type="submit">Save</button>
+        `;
+        updateForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(updateForm);
+          const payload = {};
+          fd.forEach((v,k)=> payload[k]= v === '' ? null : v);
+          await fetch(`${apiBase}/${beer.id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+          await render();
+        });
+        const delBtn = node.querySelector('[data-role="delete"]');
+        delBtn.addEventListener('click', async () => {
+          if(!confirm('Delete beer?')) return;
+            await fetch(`${apiBase}/${beer.id}`, {method:'DELETE'});
+            await render();
+        });
+        const uploadZone = node.querySelector('[data-role="upload"]');
+        const fileInput = uploadZone.querySelector('input[type=file]');
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async () => {
+          const f = fileInput.files[0];
+          if(!f) return;
+          const fd = new FormData();
+          fd.append('file', f);
+          await fetch(`${apiBase}/upload-image/${beer.id}`, { method:'POST', body: fd });
+          await render();
+        });
+        host.appendChild(node);
+      });
+    }
+    el('#createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      // Build a new FormData omitting empty values instead of sending 'null' strings
+      const clean = new FormData();
+      fd.forEach((v,k)=> { if(v !== '') clean.append(k, v); });
+      try {
+        const resp = await fetch(apiBase + '/create', { method:'POST', body: clean });
+        if(!resp.ok){
+          const msg = await resp.text();
+          alert('Create failed: ' + msg);
+          return;
+        }
+        e.target.reset();
+        await render();
+      } catch(err){
+        alert('Network error creating beer: ' + err);
+      }
+    });
+    // Settings form
+    const settingsForm = document.getElementById('settingsForm');
+    settingsForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(settingsForm);
+      const title = fd.get('title');
+      try {
+        await saveSettings({ title });
+        alert('Settings saved');
+      } catch(err){
+        alert('Failed saving settings: ' + err);
+      }
+    });
+    document.getElementById('logoInput').addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      try {
+        await uploadLogo(file);
+        location.reload();
+      } catch(err){
+        alert('Logo upload failed: ' + err);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
