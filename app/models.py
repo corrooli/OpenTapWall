@@ -5,9 +5,7 @@ The module defines:
   * DisplaySettings (+ update schema) – single row of wall display metadata
   * StoredImage – generic BLOB storage for beer images and the logo
 
-Legacy filename fields (``image`` on Beer and ``logo`` on DisplaySettings) are
-retained for backward compatibility / transitional migrations; new code should
-prefer the ``*_image_id`` foreign key relationships into ``StoredImage``.
+Images are stored exclusively as BLOBs via the ``StoredImage`` table.
 """
 
 from typing import Optional
@@ -18,8 +16,7 @@ from sqlmodel import SQLModel, Field
 class BeerBase(SQLModel):
     """Shared attributes for Beer variants (non-table base).
 
-    Includes optional numeric stats plus a legacy ``image`` filename reference
-    (pre‑BLOB storage). ``tap_number`` and ``name`` are required.
+    Includes optional numeric stats. ``tap_number`` and ``name`` are required.
     """
 
     tap_number: int
@@ -30,7 +27,6 @@ class BeerBase(SQLModel):
     sg: Optional[float] = None
     ibu: Optional[int] = None
     ebc: Optional[int] = None
-    image: Optional[str] = None
 
 
 class Beer(BeerBase, table=True):
@@ -57,19 +53,17 @@ class BeerUpdate(SQLModel):
     sg: Optional[float] = None
     ibu: Optional[int] = None
     ebc: Optional[int] = None
-    image: Optional[str] = None
 
 
 class DisplaySettings(SQLModel, table=True):
     """Singleton table holding wall display customizations.
 
     Row id is fixed at 1. ``logo_image_id`` references a ``StoredImage`` row
-    (kind="logo"). Legacy ``logo`` filename retained temporarily.
+    (kind="logo").
     """
 
     id: int = Field(default=1, primary_key=True)
     title: str = Field(default="What’s on Tap")
-    logo: Optional[str] = None
     logo_image_id: Optional[int] = Field(default=None, foreign_key="storedimage.id")
 
 

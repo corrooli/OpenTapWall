@@ -182,4 +182,4 @@ cython_debug/
 .pypirc
 
 .DS_Store
-opentap_data/
+opentapwall_data/

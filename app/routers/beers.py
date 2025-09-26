@@ -55,8 +55,7 @@ def upload_image(
 ):
     """Attach an uploaded image to a beer (stored as BLOB).
 
-    Enforces a 1MB size cap; legacy filesystem images remain accessible if
-    still referenced.
+    Enforces a 1MB size cap.
     """
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
