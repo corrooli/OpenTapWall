@@ -2,7 +2,7 @@ FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONUNBUFFERED=1 \
-	DB_PATH=/data/opentap.db
+	DB_PATH=/data/opentapwall.db
 
 WORKDIR /code
 

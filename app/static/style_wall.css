@@ -1,0 +1,235 @@
+:root {
+  --wall-bg: radial-gradient(circle at 30% 20%, #222 0%, #0d0d0f 70%);
+  --card-bg: linear-gradient(160deg, #1e1e24 0%, #121215 90%);
+  --accent: #ffb400;
+  --accent-grad: linear-gradient(90deg, #ffb400, #ff7b00);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 1.5vh 2vw 2vh;
+  background: var(--wall-bg);
+  color: #eee;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1vh;
+  gap: 2vw;
+}
+
+h1 {
+  font-size: clamp(2.4rem, 4vw, 4.3rem);
+  line-height: 1.08;
+  margin: 0;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 22px rgba(255, 140, 0, 0.25);
+  white-space: nowrap;
+}
+
+.logo {
+  height: 6.5vh;
+  max-height: 100px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, .6));
+}
+
+.admin-link {
+  color: #777;
+  text-decoration: none;
+  font-size: .85rem;
+  position: absolute;
+  top: 1.2vh;
+  right: 2vw;
+}
+
+.admin-link:hover {
+  color: #ffb400;
+}
+
+.carousel {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 1.4rem;
+  align-items: stretch;
+  will-change: transform;
+}
+
+.carousel-track:not(.is-scrolling) {
+  justify-content: center;
+}
+
+.beer-card {
+  flex: 0 0 clamp(260px, 24vw, 370px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 1rem;
+  border-radius: 20px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, .65);
+  border: 1px solid #26262c;
+  overflow: hidden;
+}
+
+.beer-card:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 180, 0, 0.12), rgba(255, 123, 0, 0.05) 35%, transparent 60%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.image-wrap {
+  width: 100%;
+  aspect-ratio: 3/4;
+  border-radius: 14px;
+  background: #18181d center/cover no-repeat;
+  margin-bottom: .65rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, .55);
+}
+
+.image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: contrast(1.05) saturate(1.05);
+}
+
+.beer-header {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  margin-bottom: .25rem;
+}
+
+.beer-number {
+  font-size: 1.3rem;
+  font-weight: 600;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.beer-name {
+  font-size: 1.55rem;
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: .45px;
+}
+
+.beer-style {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 1.3px;
+  opacity: .74;
+  margin-top: .18rem;
+}
+
+.stats {
+  margin-top: auto;
+  display: flex;
+  gap: .55rem;
+  flex-wrap: wrap;
+  font-size: .75rem;
+  letter-spacing: .6px;
+}
+
+.stat {
+  background: #232329;
+  padding: .5rem .7rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  box-shadow: 0 0 0 1px #2d2d34;
+}
+
+.stat span {
+  font-weight: 600;
+  color: #fff;
+}
+
+.fade-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7vw;
+  pointer-events: none;
+  z-index: 5;
+  display: none;
+}
+
+.fade-edge.active {
+  display: block;
+}
+
+.fade-left {
+  left: 0;
+  background: linear-gradient(90deg, #0d0d0f 5%, rgba(13, 13, 15, 0));
+}
+
+.fade-right {
+  right: 0;
+  background: linear-gradient(270deg, #0d0d0f 5%, rgba(13, 13, 15, 0));
+}
+
+/* Width fill logic for low beer counts */
+.carousel-track[data-count='1'] .beer-card {
+  flex: 0 0 80vw;
+}
+
+.carousel-track[data-count='2'] .beer-card {
+  flex: 0 0 45vw;
+}
+
+.carousel-track[data-count='3'] .beer-card {
+  flex: 0 0 30vw;
+}
+
+@media (max-width:900px) {
+  h1 {
+    font-size: clamp(1.8rem, 6.5vw, 3rem);
+  }
+
+  .beer-card {
+    flex: 0 0 clamp(230px, 60vw, 320px);
+  }
+
+  .carousel-track[data-count='2'] .beer-card {
+    flex: 0 0 48vw;
+  }
+
+  .carousel-track[data-count='3'] .beer-card {
+    flex: 0 0 32vw;
+  }
+}

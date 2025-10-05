@@ -1,0 +1,101 @@
+body {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.beer-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #222, #111);
+  border: 1px solid #333;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.beer-card img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: .5rem;
+  background: #222;
+}
+
+.beer-meta {
+  font-size: .75rem;
+  letter-spacing: .5px;
+  opacity: .75;
+}
+
+form.inline {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+form.inline input[type="text"],
+form.inline input[type="number"] {
+  width: 100%;
+}
+
+.upload-zone {
+  border: 2px dashed #555;
+  padding: .5rem;
+  text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .8rem;
+}
+
+.upload-zone:hover {
+  background: #1e1e1e;
+}
+
+.actions {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
+}
+
+#createForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: .5rem;
+}
+
+#createForm fieldset {
+  grid-column: 1 / -1;
+}
+
+.tag {
+  background: #444;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  font-size: .65rem;
+  margin-right: .25rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+nav a {
+  font-size: .9rem;
+}

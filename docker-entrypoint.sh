@@ -4,7 +4,7 @@ set -e
 # Simple one-shot database initialization for first run.
 # If the SQLite DB file does not exist, create it and seed sample data.
 
-DB_PATH="${DB_PATH:-/data/opentap.db}"
+DB_PATH="${DB_PATH:-/data/opentapwall.db}"
 DB_DIR="$(dirname "$DB_PATH")"
 
 mkdir -p "$DB_DIR"

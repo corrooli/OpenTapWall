@@ -10,7 +10,7 @@ from .db import get_session, engine
 from .models import Beer, DisplaySettings, DisplaySettingsUpdate, StoredImage
 from .routers.beers import router as beers_router
 
-app = FastAPI(title="OpenTap")
+app = FastAPI(title="OpenTapWall")
 app.include_router(beers_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 

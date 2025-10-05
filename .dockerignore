@@ -1,0 +1,16 @@
+.git/
+.github/
+.venv/
+.local/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# Editor/IDE
+.vscode/
+.cursorignore
+.cursorindexingignore
+
+# Local data and test output
+opentapwall_data/
