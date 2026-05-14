@@ -39,14 +39,14 @@ def wall(request: Request, session=Depends(get_session)):
     """Render the public tap wall display."""
     beers = session.exec(select(Beer).order_by(Beer.tap_number)).all()
     settings = session.get(DisplaySettings, 1)
-    return templates.TemplateResponse("index.html", {"request": request, "beers": beers, "settings": settings})
+    return templates.TemplateResponse(request=request, name="index.html", context={"beers": beers, "settings": settings})
 
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin(request: Request, session=Depends(get_session)):
     """Render the administration interface for managing beers and settings."""
     settings = session.get(DisplaySettings, 1)
-    return templates.TemplateResponse("admin.html", {"request": request, "settings": settings})
+    return templates.TemplateResponse(request=request, name="admin.html", context={"settings": settings})
 
 
 @app.patch("/settings", response_model=DisplaySettings)
