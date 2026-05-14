@@ -183,3 +183,6 @@ cython_debug/
 
 .DS_Store
 opentapwall_data/
+
+# AI slop generators
+.claude/

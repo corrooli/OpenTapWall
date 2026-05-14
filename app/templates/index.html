@@ -1,106 +1,177 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
-
+<html lang="en" data-theme="{{ settings.theme if settings else 'dark' }}">
 <head>
   <meta charset="utf-8" />
-  <title>OpenTap Wall</title>
+  <title>{{ settings.title if settings else "What's on Tap" }}</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.0/css/pico.min.css" />
+  <style>
+    :root { --accent: {{ settings.accent_color if settings else '#ffb400' }}; }
+    {% if settings and settings.background_image_id %}
+    body { background-image: {% if settings.theme == 'dark' %}linear-gradient(rgba(0,0,0,0.42),rgba(0,0,0,0.42)), {% endif %}url('/images/{{ settings.background_image_id }}') !important; }
+    {% endif %}
+  </style>
   <link rel="stylesheet" href="/static/style_wall.css" />
 </head>
+<body{% if settings and settings.background_image_id %} class="has-bg"{% endif %}>
 
-<body>
+  {% if not (settings and settings.hide_header) %}
   <header>
     <div style="display:flex;align-items:flex-end;gap:1.2rem;min-width:0;">
       {% if settings and settings.logo_image_id %}
       <img class="logo" src="/images/{{ settings.logo_image_id }}" alt="logo" />
       {% endif %}
-      <h1>{{ (settings.title if settings else 'What’s on Tap') }}</h1>
+      <h1>{{ settings.title if settings else "What's on Tap" }}</h1>
     </div>
-    <a class="admin-link" href="/admin">Admin</a>
   </header>
+  {% endif %}
+
+  {% set layout = settings.layout if settings else 'grid' %}
+  {% set _sym = {
+    'EUR': '€', 'USD': '$', 'GBP': '£', 'CHF': 'Fr. ', 'JPY': '¥',
+    'CAD': 'CA$', 'AUD': 'A$', 'NZD': 'NZ$',
+    'SEK': 'kr ', 'NOK': 'kr ', 'DKK': 'kr ', 'ISK': 'kr ',
+    'PLN': 'zł ', 'CZK': 'Kč ', 'HUF': 'Ft ', 'RON': 'lei ',
+    'BGN': 'лв ', 'RSD': 'din. ', 'TRY': '₺', 'RUB': '₽',
+    'UAH': '₴', 'GEL': '₾',
+    'MXN': 'MX$', 'BRL': 'R$', 'ARS': 'AR$', 'CLP': 'CL$',
+    'COP': 'CO$', 'PEN': 'S/', 'UYU': '$U ', 'BOB': 'Bs.',
+    'CNY': '¥', 'HKD': 'HK$', 'TWD': 'NT$', 'KRW': '₩',
+    'SGD': 'S$', 'MYR': 'RM ', 'THB': '฿', 'IDR': 'Rp ',
+    'PHP': '₱', 'VND': '₫', 'INR': '₹', 'BDT': '৳',
+    'PKR': 'Rs ', 'NPR': 'Rs ', 'LKR': 'Rs ', 'MNT': '₮',
+    'KZT': '₸', 'ILS': '₪', 'SAR': 'SR ', 'AED': 'AED ',
+    'KWD': 'KD ', 'QAR': 'QR ', 'BHD': 'BD ', 'OMR': 'OMR ',
+    'JOD': 'JD ', 'EGP': 'E£ ', 'MAD': 'MAD ', 'DZD': 'DA ',
+    'TND': 'DT ', 'ZAR': 'R ', 'NGN': '₦', 'KES': 'KSh ',
+    'GHS': 'GH₵', 'ETB': 'Br ', 'TZS': 'TSh ', 'UGX': 'USh '
+  } %}
+  {% set currency_sym = _sym.get(settings.currency, settings.currency ~ ' ') if settings else '€' %}
+
+  {% if layout == 'carousel' %}
+  <!-- ── Carousel mode ── -->
   <main class="carousel" id="wall">
     <div class="carousel-track" id="track" data-count="{{ beers|length }}">
-      {% for beer in beers %}
-      <article class="beer-card">
-        <div class="image-wrap">
-          {% if beer.image_id %}
-          <img src="/images/{{ beer.image_id }}" alt="{{ beer.name }}" />
-          {% else %}
-          <img src="https://placehold.co/600x800?text={{ beer.name|urlencode }}" alt="{{ beer.name }}" />
-          {% endif %}
-        </div>
-        <div class="beer-header">
-          <div class="beer-number">#{{ beer.tap_number }}</div>
-          <div style="flex:1;min-width:0;">
-            <h2 class="beer-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ beer.name }}
-            </h2>
-            <div class="beer-style">{{ beer.style or '' }}</div>
-          </div>
-        </div>
-        <div class="stats">
-          <div class="stat" title="Alcohol By Volume"><span>ABV</span> {{ "%.1f"|format(beer.abv or 0) }}%</div>
-          <div class="stat" title="Bitterness Units"><span>IBU</span> {{ beer.ibu or '-' }}</div>
-          <div class="stat" title="Color"><span>EBC</span> {{ beer.ebc or '-' }}</div>
-        </div>
-      </article>
-      {% endfor %}
+      {% for beer in beers %}{% include "beer_card.html" %}{% endfor %}
     </div>
     <div class="fade-edge fade-left"></div>
     <div class="fade-edge fade-right"></div>
   </main>
-  <script>
-    // Periodic refresh (keep for new data) – can be increased if desired
-    setInterval(() => { location.reload(); }, 60000);
+  {% elif layout == 'vertical' %}
+  <!-- ── Vertical mode ── -->
+  <main class="beer-vertical" id="wall">
+    {% for beer in beers %}{% include "beer_card.html" %}{% endfor %}
+  </main>
+  {% else %}
+  <!-- ── Smart grid mode ── -->
+  <main class="beer-grid" id="beerGrid" data-count="{{ beers|length }}">
+    {% for beer in beers %}{% include "beer_card.html" %}{% endfor %}
+  </main>
+  {% endif %}
 
-    // Seamless horizontal carousel animation if content overflows
+  <!-- Admin button: revealed on mouse move -->
+  <a class="admin-btn" id="adminBtn" href="/admin" title="Admin">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </a>
+
+  <script>
+    // ── Text fitting: shrink long names/styles to fit card width ──
+    function fitText(el) {
+      el.style.fontSize = '';
+      if (el.scrollWidth <= el.clientWidth) return;
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      const min = 11;
+      while (el.scrollWidth > el.clientWidth && size > min) {
+        size -= 0.5;
+        el.style.fontSize = size + 'px';
+      }
+    }
+    function fitAllText() {
+      document.querySelectorAll('.beer-name, .beer-style').forEach(fitText);
+    }
+    window.addEventListener('load', fitAllText);
+    window.addEventListener('resize', fitAllText);
+
+    // ── Admin button: appear on mouse move, hide after 3 s ──
+    const adminBtn = document.getElementById('adminBtn');
+    let hideTimer;
+    document.addEventListener('mousemove', () => {
+      adminBtn.classList.add('visible');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => adminBtn.classList.remove('visible'), 3000);
+    });
+
+    // ── Smart grid: set column count ─────────────────────────
+    function bestCols(n) {
+      if (n <= 1) return 1;
+      if (n <= 3) return n;
+      if (n === 4) return 2;
+      if (n <= 6) return 3;
+      return 4;
+    }
+    const grid = document.getElementById('beerGrid');
+    if (grid) {
+      grid.setAttribute('data-cols', bestCols(parseInt(grid.dataset.count || '0', 10)));
+    }
+
+    // ── Smart refresh: only reload when beer data actually changes ──
+    // Avoids the full-page flicker of a blind setInterval reload.
+    let _beerSnapshot = JSON.stringify({{ beers_json | safe }});
+    setInterval(async () => {
+      try {
+        const r = await fetch('/beers/');
+        if (!r.ok) return;
+        const current = JSON.stringify(await r.json());
+        if (current !== _beerSnapshot) location.reload();
+        _beerSnapshot = current;
+      } catch {}
+    }, 20000); // poll every 20 s, only reload on real change
+
+    // ── Carousel init (only if carousel mode active) ─────────
+    {% if layout == 'carousel' %}
     function initCarousel() {
       const container = document.querySelector('.carousel');
       const track = document.getElementById('track');
       if (!container || !track) return;
-
       const items = Array.from(track.children);
       if (items.length === 0) return;
-
-      // Wait a frame so layout (including images' aspect ratio) stabilizes
       requestAnimationFrame(() => {
-        const totalWidth = track.scrollWidth;
-        const viewWidth = container.clientWidth;
-        if (totalWidth <= viewWidth + 20) {
-          // No need to animate or show fade edges
+        // Temporarily go to scrolling mode to measure natural card widths
+        track.classList.add('is-scrolling');
+        const overflows = track.scrollWidth > container.clientWidth + 20;
+        if (!overflows) {
+          // Cards fit — stay in fill mode
+          track.classList.remove('is-scrolling');
           return;
         }
-        track.classList.add('is-scrolling');
-        // Show fade shadow edges only when carousel is active
+        // Scroll mode confirmed
         document.querySelectorAll('.fade-edge').forEach(e => e.classList.add('active'));
-        // Duplicate children until we have at least 2x viewport width for smooth loop
-        let cloneCycle = 0;
-        while (track.scrollWidth < viewWidth * 2.2 && cloneCycle < 4) {
-          for (const el of items) {
+        let cycle = 0;
+        while (track.scrollWidth < container.clientWidth * 2.2 && cycle < 4) {
+          items.forEach(el => {
             const clone = el.cloneNode(true);
             clone.setAttribute('aria-hidden', 'true');
             track.appendChild(clone);
-          }
-          cloneCycle++;
+          });
+          cycle++;
         }
-        const loopWidth = items.reduce((acc, el) => acc + el.getBoundingClientRect().width, 0) + (items.length - 1) * parseFloat(getComputedStyle(track).columnGap || 0);
-        let x = 0;
-        let lastTs = performance.now();
-        const speed = 35; // pixels per second
-        function step(ts) {
-          const dt = (ts - lastTs) / 1000; lastTs = ts;
-          x -= speed * dt;
-          if (x <= -loopWidth) { x += loopWidth; }
+        const gap = parseFloat(getComputedStyle(track).columnGap || 0);
+        const loopWidth = items.reduce((a, el) => a + el.getBoundingClientRect().width + gap, 0) - gap;
+        let x = 0, lastTs = performance.now();
+        (function step(ts) {
+          x -= 25 * (ts - lastTs) / 1000;
+          lastTs = ts;
+          if (x <= -loopWidth) x += loopWidth;
           track.style.transform = `translate3d(${x}px,0,0)`;
           requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
+        })(lastTs);
       });
     }
-
     window.addEventListener('load', initCarousel);
-    window.addEventListener('resize', () => { /* A simple reset by reloading preserves simplicity */ clearTimeout(window.__rzT); window.__rzT = setTimeout(() => location.reload(), 400); });
+    window.addEventListener('resize', () => {
+      clearTimeout(window.__rzT);
+      window.__rzT = setTimeout(() => location.reload(), 400);
+    });
+    {% endif %}
   </script>
 </body>
-
 </html>

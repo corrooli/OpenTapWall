@@ -21,12 +21,14 @@ class BeerBase(SQLModel):
 
     tap_number: int
     name: str
+    active: bool = Field(default=True)
     style: Optional[str] = None
     abv: Optional[float] = None
     og: Optional[float] = None
     sg: Optional[float] = None
     ibu: Optional[int] = None
     ebc: Optional[int] = None
+    price: Optional[float] = None
 
 
 class Beer(BeerBase, table=True):
@@ -47,12 +49,14 @@ class BeerUpdate(SQLModel):
 
     tap_number: Optional[int] = None
     name: Optional[str] = None
+    active: Optional[bool] = None
     style: Optional[str] = None
     abv: Optional[float] = None
     og: Optional[float] = None
     sg: Optional[float] = None
     ibu: Optional[int] = None
     ebc: Optional[int] = None
+    price: Optional[float] = None
 
 
 class DisplaySettings(SQLModel, table=True):
@@ -65,12 +69,26 @@ class DisplaySettings(SQLModel, table=True):
     id: int = Field(default=1, primary_key=True)
     title: str = Field(default="What’s on Tap")
     logo_image_id: Optional[int] = Field(default=None, foreign_key="storedimage.id")
+    accent_color: str = Field(default="#ffb400")
+    theme: str = Field(default="dark")
+    carousel_enabled: bool = Field(default=False)
+    background_image_id: Optional[int] = Field(default=None, foreign_key="storedimage.id")
+    currency: str = Field(default="EUR")
+    layout: str = Field(default="grid")
+    hide_header: bool = Field(default=False)
 
 
 class DisplaySettingsUpdate(SQLModel):
-    """PATCH payload for updating display settings (currently only title)."""
+    """PATCH payload for updating display settings."""
 
     title: Optional[str] = None
+    accent_color: Optional[str] = None
+    theme: Optional[str] = None
+    carousel_enabled: Optional[bool] = None
+    currency: Optional[str] = None
+    layout: Optional[str] = None
+    hide_header: Optional[bool] = None
+    background_image_id: Optional[int] = None
 
 
 class StoredImage(SQLModel, table=True):

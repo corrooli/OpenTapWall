@@ -1,5 +1,7 @@
 """FastAPI application entrypoint: routes, templates, and startup logic."""
 
+import json
+
 from fastapi import FastAPI, Request, Depends, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -37,9 +39,10 @@ def seed_data():
 @app.get("/", response_class=HTMLResponse)
 def wall(request: Request, session=Depends(get_session)):
     """Render the public tap wall display."""
-    beers = session.exec(select(Beer).order_by(Beer.tap_number)).all()
+    beers = session.exec(select(Beer).where(Beer.active == True).order_by(Beer.tap_number)).all()
     settings = session.get(DisplaySettings, 1)
-    return templates.TemplateResponse(request=request, name="index.html", context={"beers": beers, "settings": settings})
+    beers_json = json.dumps([b.model_dump() for b in beers])
+    return templates.TemplateResponse(request=request, name="index.html", context={"beers": beers, "settings": settings, "beers_json": beers_json})
 
 
 @app.get("/admin", response_class=HTMLResponse)
@@ -79,6 +82,25 @@ def upload_logo(file: UploadFile = File(...), session=Depends(get_session)):
     session.add(img)
     session.flush()
     settings.logo_image_id = img.id
+    session.add(settings)
+    session.commit()
+    session.refresh(settings)
+    return settings
+
+
+@app.post("/settings/background", response_model=DisplaySettings)
+def upload_background(file: UploadFile = File(...), session=Depends(get_session)):
+    """Upload and persist a background image (stored as BLOB, max 5 MB)."""
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    data = file.file.read()
+    if len(data) > 5_000_000:
+        raise HTTPException(status_code=413, detail="Background too large (max 5MB)")
+    settings = session.get(DisplaySettings, 1) or DisplaySettings()
+    img = StoredImage(kind="background", ref_id=None, content_type=file.content_type, data=data)
+    session.add(img)
+    session.flush()
+    settings.background_image_id = img.id
     session.add(settings)
     session.commit()
     session.refresh(settings)

@@ -1,182 +1,549 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
-
+<html lang="en" data-theme="{{ settings.theme if settings else 'dark' }}">
 <head>
-    <meta charset="utf-8" />
-    <title>OpenTapWall Admin</title>
-    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.0/css/pico.min.css" />
-    <link rel="stylesheet" href="/static/style_admin.css" />
+  <meta charset="utf-8" />
+  <title>OpenTapWall Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>:root { --accent: {{ settings.accent_color if settings else '#ffb400' }}; }</style>
+  <link rel="stylesheet" href="/static/style_admin.css" />
 </head>
-
 <body>
-    <header>
-        <h1 style="margin:0;">Admin – OpenTapWall</h1>
-        <nav><a href="/" role="button" class="secondary">View Wall</a></nav>
-    </header>
-    <hr />
+<div class="admin-wrap">
 
-    <h2>Display Settings</h2>
-    <form id="settingsForm"
-        style="max-width:520px;display:grid;gap:.5rem;grid-template-columns:1fr auto;align-items:center;">
-        <input name="title" type="text" placeholder="Wall Title" value="{{ settings.title if settings else '' }}"
-            style="grid-column:1/ span 2;" />
-        <div style="display:flex;align-items:center;gap:1rem;grid-column:1/ span 2;">
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="header-left">
+      <div class="accent-dot" id="accentDot"></div>
+      <div class="wordmark">
+        <strong>OpenTapWall</strong>
+        <span>Admin Panel</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.65rem;">
+      <a href="https://ko-fi.com/olivercorrodi" target="_blank" rel="noopener" class="kofi-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 2.687.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+        Support on Ko-fi
+      </a>
+      <a href="/" class="btn btn-ghost">
+        <svg width="14" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        View Wall
+      </a>
+    </div>
+  </header>
+
+  <!-- Top grid: settings + create beer -->
+  <div class="top-grid">
+
+    <!-- Display Settings -->
+    <div class="panel">
+      <p class="section-label">Display Settings</p>
+      <form id="settingsForm">
+        <div class="field">
+          <label class="field-label" for="wallTitle">Wall Title</label>
+          <input id="wallTitle" name="title" type="text" placeholder="What's on Tap"
+            value="{{ settings.title if settings else '' }}" />
+        </div>
+
+        <div class="field">
+          <label class="field-label">Logo</label>
+          <div class="logo-row">
             {% if settings and settings.logo_image_id %}
-            <img src="/images/{{ settings.logo_image_id }}" alt="logo"
-                style="height:60px;width:auto;object-fit:contain;" />
-            {% else %}
-            <span style="font-size:.8rem;opacity:.6;">No logo uploaded</span>
+            <img class="logo-preview" src="/images/{{ settings.logo_image_id }}" alt="logo" />
             {% endif %}
-            <label class="upload-zone" style="margin:0;flex:1;">Upload Logo<input id="logoInput" type="file"
-                    hidden /></label>
+            <label class="upload-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload Logo
+              <input id="logoInput" type="file" accept="image/*" hidden />
+            </label>
+          </div>
         </div>
-        <button type="submit" style="grid-column:1/ span 2;">Save Settings</button>
-    </form>
 
-    <h2 style="margin-top:2rem;">Create Beer</h2>
-    <form id="createForm">
-        <input name="tap_number" type="number" placeholder="Tap #" required />
-        <input name="name" type="text" placeholder="Name" required />
-        <input name="style" type="text" placeholder="Style" />
-        <input name="abv" step="0.1" type="number" placeholder="ABV %" />
-        <input name="ibu" type="number" placeholder="IBU" />
-        <input name="ebc" type="number" placeholder="EBC" />
-        <button type="submit">Create</button>
-    </form>
-
-    <h2 style="margin-top:2rem;">Existing Beers</h2>
-    <div id="beers" class="grid"></div>
-
-    <template id="beerCardTpl">
-        <div class="beer-card" data-id="">
-            <img data-role="image" alt="Beer image" />
-            <strong data-role="title"></strong>
-            <div class="beer-meta" data-role="meta"></div>
-            <div class="actions">
-                <form class="inline update-form"></form>
-                <div class="upload-zone" data-role="upload">Upload Image<input type="file" hidden /></div>
-                <button class="secondary outline" data-role="delete" style="width:100%;">Delete</button>
+        <div class="two-col" style="margin-bottom:.85rem;">
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label" for="accentColor">Accent Color</label>
+            <input id="accentColor" name="accent_color" type="color"
+              value="{{ settings.accent_color if settings else '#ffb400' }}" />
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label">Theme</label>
+            <div class="theme-switch" id="themeSwitch">
+              <button type="button" class="theme-opt {{ 'active' if not settings or settings.theme == 'dark' else '' }}" data-t="dark">🌙 Dark</button>
+              <button type="button" class="theme-opt {{ 'active' if settings and settings.theme == 'light' else '' }}" data-t="light">☀️ Light</button>
             </div>
+          </div>
         </div>
-    </template>
 
-    <script>
-        const apiBase = '/beers';
-        async function saveSettings(payload) {
-            const resp = await fetch('/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!resp.ok) throw new Error(await resp.text());
-            return resp.json();
-        }
-        async function uploadLogo(file) {
-            const fd = new FormData();
-            fd.append('file', file);
-            const resp = await fetch('/settings/logo', { method: 'POST', body: fd });
-            if (!resp.ok) throw new Error(await resp.text());
-            return resp.json();
-        }
-        async function fetchBeers() {
-            const r = await fetch(apiBase + '/');
-            return r.json();
-        }
-        function el(sel, root = document) { return root.querySelector(sel); }
-        function fmt(beer) {
-            return `ABV ${beer.abv ?? '-'} · IBU ${beer.ibu ?? '-'} · EBC ${beer.ebc ?? '-'}`;
-        }
-        async function render() {
-            const list = await fetchBeers();
-            const host = el('#beers');
-            host.innerHTML = '';
-            const tpl = el('#beerCardTpl');
-            list.forEach(beer => {
-                const node = tpl.content.cloneNode(true);
-                const card = node.querySelector('.beer-card');
-                card.dataset.id = beer.id;
-                const title = node.querySelector('[data-role="title"]');
-                title.textContent = `${beer.tap_number} – ${beer.name}`;
-                const meta = node.querySelector('[data-role="meta"]');
-                meta.textContent = fmt(beer);
-                const imgEl = node.querySelector('[data-role="image"]');
-                imgEl.src = beer.image_id ? `/images/${beer.image_id}` : 'https://placehold.co/400x520?text=No+Image';
-                const updateForm = node.querySelector('.update-form');
-                updateForm.innerHTML = `
-          <input name="tap_number" type="number" value="${beer.tap_number}" />
-          <input name="name" type="text" value="${beer.name}" />
-          <input name="style" type="text" value="${beer.style ?? ''}" />
-          <button type="submit">Save</button>
-        `;
-                updateForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const fd = new FormData(updateForm);
-                    const payload = {};
-                    fd.forEach((v, k) => payload[k] = v === '' ? null : v);
-                    await fetch(`${apiBase}/${beer.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    await render();
-                });
-                const delBtn = node.querySelector('[data-role="delete"]');
-                delBtn.addEventListener('click', async () => {
-                    if (!confirm('Delete beer?')) return;
-                    await fetch(`${apiBase}/${beer.id}`, { method: 'DELETE' });
-                    await render();
-                });
-                const uploadZone = node.querySelector('[data-role="upload"]');
-                const fileInput = uploadZone.querySelector('input[type=file]');
-                uploadZone.addEventListener('click', () => fileInput.click());
-                fileInput.addEventListener('change', async () => {
-                    const f = fileInput.files[0];
-                    if (!f) return;
-                    const fd = new FormData();
-                    fd.append('file', f);
-                    await fetch(`${apiBase}/upload-image/${beer.id}`, { method: 'POST', body: fd });
-                    await render();
-                });
-                host.appendChild(node);
-            });
-        }
-        el('#createForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fd = new FormData(e.target);
-            // Build a new FormData omitting empty values instead of sending 'null' strings
-            const clean = new FormData();
-            fd.forEach((v, k) => { if (v !== '') clean.append(k, v); });
-            try {
-                const resp = await fetch(apiBase + '/create', { method: 'POST', body: clean });
-                if (!resp.ok) {
-                    const msg = await resp.text();
-                    alert('Create failed: ' + msg);
-                    return;
-                }
-                e.target.reset();
-                await render();
-            } catch (err) {
-                alert('Network error creating beer: ' + err);
-            }
-        });
-        // Settings form
-        const settingsForm = document.getElementById('settingsForm');
-        settingsForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fd = new FormData(settingsForm);
-            const title = fd.get('title');
-            try {
-                await saveSettings({ title });
-                alert('Settings saved');
-            } catch (err) {
-                alert('Failed saving settings: ' + err);
-            }
-        });
-        document.getElementById('logoInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
-                await uploadLogo(file);
-                location.reload();
-            } catch (err) {
-                alert('Logo upload failed: ' + err);
-            }
-        });
+        <div class="field">
+          <label class="field-label" for="currency">Currency</label>
+          <select id="currency" name="currency" class="field-input">
+            {% set cur = settings.currency if settings else 'EUR' %}
+            <option value="EUR" {{ 'selected' if cur == 'EUR' }}>EUR – Euro (€)</option>
+            <option value="USD" {{ 'selected' if cur == 'USD' }}>USD – US Dollar ($)</option>
+            <option value="GBP" {{ 'selected' if cur == 'GBP' }}>GBP – British Pound (£)</option>
+            <option value="CHF" {{ 'selected' if cur == 'CHF' }}>CHF – Swiss Franc (Fr.)</option>
+            <option value="JPY" {{ 'selected' if cur == 'JPY' }}>JPY – Japanese Yen (¥)</option>
+            <option value="CAD" {{ 'selected' if cur == 'CAD' }}>CAD – Canadian Dollar (CA$)</option>
+            <option value="AUD" {{ 'selected' if cur == 'AUD' }}>AUD – Australian Dollar (A$)</option>
+            <option value="NZD" {{ 'selected' if cur == 'NZD' }}>NZD – New Zealand Dollar (NZ$)</option>
+            <option disabled>── Europe ──</option>
+            <option value="SEK" {{ 'selected' if cur == 'SEK' }}>SEK – Swedish Krona (kr)</option>
+            <option value="NOK" {{ 'selected' if cur == 'NOK' }}>NOK – Norwegian Krone (kr)</option>
+            <option value="DKK" {{ 'selected' if cur == 'DKK' }}>DKK – Danish Krone (kr)</option>
+            <option value="ISK" {{ 'selected' if cur == 'ISK' }}>ISK – Icelandic Króna (kr)</option>
+            <option value="PLN" {{ 'selected' if cur == 'PLN' }}>PLN – Polish Złoty (zł)</option>
+            <option value="CZK" {{ 'selected' if cur == 'CZK' }}>CZK – Czech Koruna (Kč)</option>
+            <option value="HUF" {{ 'selected' if cur == 'HUF' }}>HUF – Hungarian Forint (Ft)</option>
+            <option value="RON" {{ 'selected' if cur == 'RON' }}>RON – Romanian Leu (lei)</option>
+            <option value="BGN" {{ 'selected' if cur == 'BGN' }}>BGN – Bulgarian Lev (лв)</option>
+            <option value="RSD" {{ 'selected' if cur == 'RSD' }}>RSD – Serbian Dinar (din.)</option>
+            <option value="TRY" {{ 'selected' if cur == 'TRY' }}>TRY – Turkish Lira (₺)</option>
+            <option value="RUB" {{ 'selected' if cur == 'RUB' }}>RUB – Russian Ruble (₽)</option>
+            <option value="UAH" {{ 'selected' if cur == 'UAH' }}>UAH – Ukrainian Hryvnia (₴)</option>
+            <option value="GEL" {{ 'selected' if cur == 'GEL' }}>GEL – Georgian Lari (₾)</option>
+            <option disabled>── Americas ──</option>
+            <option value="MXN" {{ 'selected' if cur == 'MXN' }}>MXN – Mexican Peso (MX$)</option>
+            <option value="BRL" {{ 'selected' if cur == 'BRL' }}>BRL – Brazilian Real (R$)</option>
+            <option value="ARS" {{ 'selected' if cur == 'ARS' }}>ARS – Argentine Peso (AR$)</option>
+            <option value="CLP" {{ 'selected' if cur == 'CLP' }}>CLP – Chilean Peso (CL$)</option>
+            <option value="COP" {{ 'selected' if cur == 'COP' }}>COP – Colombian Peso (CO$)</option>
+            <option value="PEN" {{ 'selected' if cur == 'PEN' }}>PEN – Peruvian Sol (S/)</option>
+            <option value="UYU" {{ 'selected' if cur == 'UYU' }}>UYU – Uruguayan Peso ($U)</option>
+            <option value="BOB" {{ 'selected' if cur == 'BOB' }}>BOB – Bolivian Boliviano (Bs.)</option>
+            <option disabled>── Asia & Pacific ──</option>
+            <option value="CNY" {{ 'selected' if cur == 'CNY' }}>CNY – Chinese Yuan (¥)</option>
+            <option value="HKD" {{ 'selected' if cur == 'HKD' }}>HKD – Hong Kong Dollar (HK$)</option>
+            <option value="TWD" {{ 'selected' if cur == 'TWD' }}>TWD – Taiwan Dollar (NT$)</option>
+            <option value="KRW" {{ 'selected' if cur == 'KRW' }}>KRW – South Korean Won (₩)</option>
+            <option value="SGD" {{ 'selected' if cur == 'SGD' }}>SGD – Singapore Dollar (S$)</option>
+            <option value="MYR" {{ 'selected' if cur == 'MYR' }}>MYR – Malaysian Ringgit (RM)</option>
+            <option value="THB" {{ 'selected' if cur == 'THB' }}>THB – Thai Baht (฿)</option>
+            <option value="IDR" {{ 'selected' if cur == 'IDR' }}>IDR – Indonesian Rupiah (Rp)</option>
+            <option value="PHP" {{ 'selected' if cur == 'PHP' }}>PHP – Philippine Peso (₱)</option>
+            <option value="VND" {{ 'selected' if cur == 'VND' }}>VND – Vietnamese Dong (₫)</option>
+            <option value="INR" {{ 'selected' if cur == 'INR' }}>INR – Indian Rupee (₹)</option>
+            <option value="BDT" {{ 'selected' if cur == 'BDT' }}>BDT – Bangladeshi Taka (৳)</option>
+            <option value="PKR" {{ 'selected' if cur == 'PKR' }}>PKR – Pakistani Rupee (Rs)</option>
+            <option value="NPR" {{ 'selected' if cur == 'NPR' }}>NPR – Nepalese Rupee (Rs)</option>
+            <option value="LKR" {{ 'selected' if cur == 'LKR' }}>LKR – Sri Lankan Rupee (Rs)</option>
+            <option value="MNT" {{ 'selected' if cur == 'MNT' }}>MNT – Mongolian Tögrög (₮)</option>
+            <option value="KZT" {{ 'selected' if cur == 'KZT' }}>KZT – Kazakhstani Tenge (₸)</option>
+            <option disabled>── Middle East & N. Africa ──</option>
+            <option value="ILS" {{ 'selected' if cur == 'ILS' }}>ILS – Israeli Shekel (₪)</option>
+            <option value="SAR" {{ 'selected' if cur == 'SAR' }}>SAR – Saudi Riyal (SR)</option>
+            <option value="AED" {{ 'selected' if cur == 'AED' }}>AED – UAE Dirham (AED)</option>
+            <option value="KWD" {{ 'selected' if cur == 'KWD' }}>KWD – Kuwaiti Dinar (KD)</option>
+            <option value="QAR" {{ 'selected' if cur == 'QAR' }}>QAR – Qatari Riyal (QR)</option>
+            <option value="BHD" {{ 'selected' if cur == 'BHD' }}>BHD – Bahraini Dinar (BD)</option>
+            <option value="OMR" {{ 'selected' if cur == 'OMR' }}>OMR – Omani Rial (OMR)</option>
+            <option value="JOD" {{ 'selected' if cur == 'JOD' }}>JOD – Jordanian Dinar (JD)</option>
+            <option value="EGP" {{ 'selected' if cur == 'EGP' }}>EGP – Egyptian Pound (E£)</option>
+            <option value="MAD" {{ 'selected' if cur == 'MAD' }}>MAD – Moroccan Dirham (MAD)</option>
+            <option value="DZD" {{ 'selected' if cur == 'DZD' }}>DZD – Algerian Dinar (DA)</option>
+            <option value="TND" {{ 'selected' if cur == 'TND' }}>TND – Tunisian Dinar (DT)</option>
+            <option disabled>── Africa ──</option>
+            <option value="ZAR" {{ 'selected' if cur == 'ZAR' }}>ZAR – South African Rand (R)</option>
+            <option value="NGN" {{ 'selected' if cur == 'NGN' }}>NGN – Nigerian Naira (₦)</option>
+            <option value="KES" {{ 'selected' if cur == 'KES' }}>KES – Kenyan Shilling (KSh)</option>
+            <option value="GHS" {{ 'selected' if cur == 'GHS' }}>GHS – Ghanaian Cedi (GH₵)</option>
+            <option value="ETB" {{ 'selected' if cur == 'ETB' }}>ETB – Ethiopian Birr (Br)</option>
+            <option value="TZS" {{ 'selected' if cur == 'TZS' }}>TZS – Tanzanian Shilling (TSh)</option>
+            <option value="UGX" {{ 'selected' if cur == 'UGX' }}>UGX – Ugandan Shilling (USh)</option>
+          </select>
+        </div>
 
+        <div class="two-col" style="margin-bottom:.85rem;">
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label">Layout</label>
+            {% set cur_layout = settings.layout if settings else 'grid' %}
+            <div class="theme-switch" id="layoutSwitch">
+              <button type="button" class="theme-opt {{ 'active' if cur_layout == 'grid' else '' }}" data-layout="grid">⊞ Grid</button>
+              <button type="button" class="theme-opt {{ 'active' if cur_layout == 'carousel' else '' }}" data-layout="carousel">↔ Carousel</button>
+              <button type="button" class="theme-opt {{ 'active' if cur_layout == 'vertical' else '' }}" data-layout="vertical">↕ Vertical</button>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label">Background</label>
+            <div class="logo-row">
+              {% if settings and settings.background_image_id %}
+              <img class="logo-preview" src="/images/{{ settings.background_image_id }}" alt="bg" />
+              {% endif %}
+              <label class="upload-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload BG
+                <input id="bgInput" type="file" accept="image/*" hidden />
+              </label>
+              {% if settings and settings.background_image_id %}
+              <button type="button" id="removeBgBtn" class="upload-btn" style="border-color:rgba(217,84,84,0.4);color:#d95454;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Remove
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:.85rem;">
+          <label class="field-label">Title Bar</label>
+          <div class="theme-switch" id="headerSwitch">
+            <button type="button" class="theme-opt {{ '' if settings and settings.hide_header else 'active' }}" data-h="0">Visible</button>
+            <button type="button" class="theme-opt {{ 'active' if settings and settings.hide_header else '' }}" data-h="1">Hidden</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+      </form>
+    </div>
+
+    <!-- Add Beer -->
+    <div class="panel">
+      <p class="section-label">Add Beer</p>
+      <form id="createForm">
+        <div class="two-col">
+          <div class="field">
+            <label class="field-label" for="tapNum">Tap #</label>
+            <input id="tapNum" name="tap_number" type="number" placeholder="1" required />
+          </div>
+          <div class="field">
+            <label class="field-label" for="beerAbv">ABV %</label>
+            <input id="beerAbv" name="abv" step="0.1" type="number" placeholder="5.0" />
+          </div>
+          <div class="field full">
+            <label class="field-label" for="beerName">Name</label>
+            <input id="beerName" name="name" type="text" placeholder="Pale Ale" required />
+          </div>
+          <div class="field full">
+            <label class="field-label" for="beerStyle">Style</label>
+            <input id="beerStyle" name="style" type="text" placeholder="West Coast IPA" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="beerIbu">IBU</label>
+            <input id="beerIbu" name="ibu" type="number" placeholder="35" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="beerEbc">EBC</label>
+            <input id="beerEbc" name="ebc" type="number" placeholder="12" />
+          </div>
+          <div class="field full">
+            <label class="field-label" for="beerPrice">Price (leave blank to hide)</label>
+            <input id="beerPrice" name="price" type="number" step="0.01" placeholder="4.50" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:.4rem;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Beer
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Beer list -->
+  <p class="section-label">Your Beers</p>
+  <div class="beer-grid" id="beers"></div>
+
+  <template id="beerCardTpl">
+    <div class="beer-card-admin" data-id="">
+      <img data-role="image" alt="Beer" />
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
+          <div class="card-title" data-role="title"></div>
+          <span class="status-badge" data-role="statusBadge"></span>
+        </div>
+        <div class="card-meta" data-role="meta"></div>
+        <form class="update-form" data-role="updateForm">
+          <input name="tap_number" type="number" placeholder="Tap #" />
+          <input name="name" type="text" placeholder="Name" />
+          <input name="style" type="text" placeholder="Style" />
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.38rem;">
+            <input name="abv" type="number" step="0.1" placeholder="ABV %" />
+            <input name="ibu" type="number" placeholder="IBU" />
+            <input name="ebc" type="number" placeholder="EBC" />
+          </div>
+          <input name="price" type="number" step="0.01" placeholder="Price (blank = hidden)" />
+          <button type="submit" class="btn btn-save">Save Changes</button>
+        </form>
+        <div class="card-actions">
+          <button class="btn btn-toggle" data-role="toggle"></button>
+          <label class="img-upload" data-role="upload">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Replace Image
+            <input type="file" accept="image/*" hidden />
+          </label>
+          <button class="btn btn-danger" data-role="delete">Remove Beer</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div><!-- /admin-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Theme switch ──────────────────────────────────────────
+  let currentTheme = '{{ settings.theme if settings else "dark" }}';
+  let currentLayout = '{{ settings.layout if settings else "grid" }}';
+  let hideHeader = {{ 'true' if settings and settings.hide_header else 'false' }};
+
+  document.querySelectorAll('#headerSwitch .theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      hideHeader = btn.dataset.h === '1';
+      document.querySelectorAll('#headerSwitch .theme-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.h === btn.dataset.h)
+      );
+    });
+  });
+
+  document.querySelectorAll('#layoutSwitch .theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentLayout = btn.dataset.layout;
+      document.querySelectorAll('#layoutSwitch .theme-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.layout === currentLayout)
+      );
+    });
+  });
+
+  document.querySelectorAll('#themeSwitch .theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentTheme = btn.dataset.t;
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      document.querySelectorAll('#themeSwitch .theme-opt').forEach(b =>
+        b.classList.toggle('active', b.dataset.t === currentTheme)
+      );
+    });
+  });
+
+  // ── Accent live preview ───────────────────────────────────
+  const accentInput = document.getElementById('accentColor');
+  function applyAccent(color) {
+    document.documentElement.style.setProperty('--accent', color);
+  }
+  accentInput.addEventListener('input', () => applyAccent(accentInput.value));
+
+  // ── Toast ─────────────────────────────────────────────────
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  // ── API helpers ───────────────────────────────────────────
+  const api = '/beers';
+
+  async function saveSettings(payload) {
+    const r = await fetch('/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  async function uploadLogo(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch('/settings/logo', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  function fmtStats(beer) {
+    return [
+      beer.style || null,
+      beer.abv != null ? `ABV ${beer.abv}%` : null,
+      beer.ibu != null ? `IBU ${beer.ibu}` : null,
+      beer.ebc != null ? `EBC ${beer.ebc}` : null,
+    ].filter(Boolean).join(' · ') || '—';
+  }
+
+  // ── Beer list ─────────────────────────────────────────────
+  async function render() {
+    const list = await fetch(api + '/').then(r => r.json());
+    const host = document.getElementById('beers');
+    host.innerHTML = '';
+
+    if (list.length === 0) {
+      host.innerHTML = '<div class="empty-state">No beers yet — add your first one above.</div>';
+      return;
+    }
+
+    const tpl = document.getElementById('beerCardTpl');
+    list.forEach(beer => {
+      const node = tpl.content.cloneNode(true);
+      const card = node.querySelector('.beer-card-admin');
+      card.dataset.id = beer.id;
+      node.querySelector('[data-role="title"]').textContent = `#${beer.tap_number} – ${beer.name}`;
+      node.querySelector('[data-role="meta"]').textContent = fmtStats(beer);
+      const img = node.querySelector('[data-role="image"]');
+      img.src = beer.image_id ? `/images/${beer.image_id}` : 'https://placehold.co/400x300?text=No+Image';
+
+      const form = node.querySelector('[data-role="updateForm"]');
+      form.querySelector('[name="tap_number"]').value = beer.tap_number;
+      form.querySelector('[name="name"]').value = beer.name;
+      form.querySelector('[name="style"]').value = beer.style ?? '';
+      form.querySelector('[name="abv"]').value = beer.abv ?? '';
+      form.querySelector('[name="ibu"]').value = beer.ibu ?? '';
+      form.querySelector('[name="ebc"]').value = beer.ebc ?? '';
+      form.querySelector('[name="price"]').value = beer.price ?? '';
+
+      // Status badge + toggle
+      const badge = node.querySelector('[data-role="statusBadge"]');
+      const toggleBtn = node.querySelector('[data-role="toggle"]');
+      function applyActiveState(active) {
+        card.classList.toggle('card-inactive', !active);
+        badge.textContent = active ? 'On tap' : 'Hidden';
+        badge.className = 'status-badge ' + (active ? 'badge-active' : 'badge-inactive');
+        toggleBtn.textContent = active ? 'Hide from Wall' : 'Show on Wall';
+        toggleBtn.className = 'btn ' + (active ? 'btn-hide' : 'btn-show');
+      }
+      applyActiveState(beer.active);
+      toggleBtn.addEventListener('click', async () => {
+        const newActive = !beer.active;
+        await fetch(`${api}/${beer.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: newActive }),
+        });
+        beer.active = newActive;
+        applyActiveState(newActive);
+        toast(newActive ? 'Beer shown on wall' : 'Beer hidden from wall');
+      });
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const payload = {};
+        new FormData(form).forEach((v, k) => {
+          if (v === '') { payload[k] = null; return; }
+          const n = Number(v);
+          payload[k] = isNaN(n) ? v : n;
+        });
+        await fetch(`${api}/${beer.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        toast('Beer updated');
         render();
-    </script>
-</body>
+      });
 
+      node.querySelector('[data-role="delete"]').addEventListener('click', async () => {
+        if (!confirm(`Remove "${beer.name}"?`)) return;
+        await fetch(`${api}/${beer.id}`, { method: 'DELETE' });
+        toast('Beer removed');
+        render();
+      });
+
+      const uploadZone = node.querySelector('[data-role="upload"]');
+      uploadZone.querySelector('input[type=file]').addEventListener('change', async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const fd = new FormData();
+        fd.append('file', f);
+        await fetch(`${api}/upload-image/${beer.id}`, { method: 'POST', body: fd });
+        toast('Image updated');
+        render();
+      });
+
+      host.appendChild(node);
+    });
+  }
+
+  // ── Create beer ───────────────────────────────────────────
+  document.getElementById('createForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const clean = new FormData();
+    new FormData(e.target).forEach((v, k) => { if (v !== '') clean.append(k, v); });
+    try {
+      const r = await fetch(api + '/create', { method: 'POST', body: clean });
+      if (!r.ok) { alert('Create failed: ' + await r.text()); return; }
+      e.target.reset();
+      toast('Beer added!');
+      render();
+    } catch (err) {
+      alert('Network error: ' + err);
+    }
+  });
+
+  // ── Settings form ─────────────────────────────────────────
+  document.getElementById('settingsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await saveSettings({
+        title: document.getElementById('wallTitle').value,
+        accent_color: accentInput.value,
+        theme: currentTheme,
+        layout: currentLayout,
+        hide_header: hideHeader,
+        currency: document.getElementById('currency').value,
+      });
+      toast('Settings saved');
+    } catch (err) {
+      alert('Failed: ' + err);
+    }
+  });
+
+  // ── Logo upload ───────────────────────────────────────────
+  document.getElementById('logoInput').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      await uploadLogo(file);
+      toast('Logo updated');
+      setTimeout(() => location.reload(), 900);
+    } catch (err) {
+      alert('Logo upload failed: ' + err);
+    }
+  });
+
+  // ── Background upload ─────────────────────────────────────
+  document.getElementById('bgInput').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/settings/background', { method: 'POST', body: fd });
+      if (!r.ok) { alert('Upload failed: ' + await r.text()); return; }
+      toast('Background updated');
+      setTimeout(() => location.reload(), 900);
+    } catch (err) {
+      alert('Network error: ' + err);
+    }
+  });
+
+  // ── Remove background ────────────────────────────────────
+  const removeBgBtn = document.getElementById('removeBgBtn');
+  if (removeBgBtn) {
+    removeBgBtn.addEventListener('click', async () => {
+      await fetch('/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ background_image_id: null }),
+      });
+      toast('Background removed');
+      setTimeout(() => location.reload(), 900);
+    });
+  }
+
+  // ── Auto-save on "View Wall" ──────────────────────────────
+  document.querySelector('a[href="/"]').addEventListener('click', async e => {
+    e.preventDefault();
+    try {
+      await saveSettings({
+        title: document.getElementById('wallTitle').value,
+        accent_color: accentInput.value,
+        theme: currentTheme,
+        layout: currentLayout,
+        hide_header: hideHeader,
+        currency: document.getElementById('currency').value,
+      });
+    } catch {}
+    location.href = '/';
+  });
+
+  render();
+</script>
+</body>
 </html>
