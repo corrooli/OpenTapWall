@@ -20,8 +20,6 @@ RUN chmod +x /code/docker-entrypoint.sh
 # Expose data volume separately for persistence (SQLite DB & uploaded images)
 VOLUME ["/data"]
 
-USER appuser
-
 EXPOSE 8000
 
 ENTRYPOINT ["/code/docker-entrypoint.sh"]
