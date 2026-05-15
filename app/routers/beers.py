@@ -83,6 +83,7 @@ def create_beer_form(
     abv: str | None = Form(None),
     ibu: str | None = Form(None),
     ebc: str | None = Form(None),
+    price: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     """Admin form-based creation endpoint.
@@ -105,5 +106,6 @@ def create_beer_form(
         abv=fnum(abv, float),
         ibu=fnum(ibu, int),
         ebc=fnum(ebc, int),
+        price=fnum(price, float),
     )
     return crud.create_beer(session=session, beer_in=beer_in)

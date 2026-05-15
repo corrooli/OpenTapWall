@@ -55,26 +55,42 @@ def _lightweight_migrate():
             if "beer" in tables:
                 result = conn.exec_driver_sql("PRAGMA table_info(beer);")
                 existing_cols = {row[1] for row in result.fetchall()}
-                if "image_id" not in existing_cols:
-                    try:
-                        logging.info("[migrate] Adding 'image_id' column to beer")
-                        conn.exec_driver_sql("ALTER TABLE beer ADD COLUMN image_id INTEGER")
-                    except SQLAlchemyError as e:
-                        logging.warning("[migrate] Could not add image_id column: %s", e)
+                for col, definition in [
+                    ("image_id", "INTEGER"),
+                    ("price", "REAL"),
+                    ("active", "INTEGER DEFAULT 1"),
+                ]:
+                    if col not in existing_cols:
+                        try:
+                            logging.info("[migrate] Adding '%s' column to beer", col)
+                            conn.exec_driver_sql(f"ALTER TABLE beer ADD COLUMN {col} {definition}")
+                        except SQLAlchemyError as e:
+                            logging.warning("[migrate] Could not add %s column to beer: %s", col, e)
 
             conn.exec_driver_sql("CREATE TABLE IF NOT EXISTS displaysettings (id INTEGER PRIMARY KEY, title VARCHAR, logo_image_id INTEGER)")
             ds_cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(displaysettings);").fetchall()}
-            if "logo_image_id" not in ds_cols:
-                try:
-                    logging.info("[migrate] Adding 'logo_image_id' column to displaysettings")
-                    conn.exec_driver_sql("ALTER TABLE displaysettings ADD COLUMN logo_image_id INTEGER")
-                except SQLAlchemyError as e:
-                    logging.warning("[migrate] Could not add logo_image_id: %s", e)
+            for col, definition in [
+                ("logo_image_id", "INTEGER"),
+                ("accent_color", "VARCHAR DEFAULT ‘#ffb400’"),
+                ("theme", "VARCHAR DEFAULT ‘dark’"),
+                ("carousel_enabled", "INTEGER DEFAULT 0"),
+                ("background_image_id", "INTEGER"),
+                ("currency", "VARCHAR DEFAULT 'EUR'"),
+                ("layout", "VARCHAR DEFAULT 'grid'"),
+                ("hide_header", "INTEGER DEFAULT 0"),
+            ]:
+                if col not in ds_cols:
+                    try:
+                        logging.info("[migrate] Adding ‘%s’ column to displaysettings", col)
+                        conn.exec_driver_sql(f"ALTER TABLE displaysettings ADD COLUMN {col} {definition}")
+                    except SQLAlchemyError as e:
+                        logging.warning("[migrate] Could not add %s column: %s", col, e)
             row = conn.exec_driver_sql("SELECT id FROM displaysettings WHERE id=1").fetchone()
             if not row:
-                conn.exec_driver_sql("INSERT INTO displaysettings (id, title, logo_image_id) VALUES (1, 'What’s on Tap', NULL)")
+                conn.exec_driver_sql("INSERT INTO displaysettings (id, title, logo_image_id, accent_color, theme) VALUES (1, ‘What’’s on Tap’, NULL, ‘#ffb400’, ‘dark’)")
 
             conn.exec_driver_sql("CREATE TABLE IF NOT EXISTS storedimage (id INTEGER PRIMARY KEY, kind VARCHAR, ref_id INTEGER, content_type VARCHAR, data BLOB, created_at VARCHAR)")
+            conn.commit()
     except (SQLAlchemyError, OSError) as exc:
         logging.warning(
             "Lightweight migration skipped or failed (%s): %s", type(exc).__name__, exc

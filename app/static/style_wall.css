@@ -1,68 +1,177 @@
+/* ── OpenTapWall  –  Wall display ── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --wall-bg: radial-gradient(circle at 30% 20%, #222 0%, #0d0d0f 70%);
-  --card-bg: linear-gradient(160deg, #1e1e24 0%, #121215 90%);
-  --accent: #ffb400;
-  --accent-grad: linear-gradient(90deg, #ffb400, #ff7b00);
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --gap: clamp(0.8rem, 1.4vw, 1.6rem);
 }
 
-html,
-body {
-  height: 100%;
+[data-theme="dark"] {
+  --bg: #0c0c0f;
+  --bg-grad: radial-gradient(ellipse 90% 70% at 18% 0%, #14101c 0%, #0c0c0f 55%);
+  --surface: #14141c;
+  --surface-2: #1a1a24;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #f2efe8;
+  --text-dim: rgba(242, 239, 232, 0.52);
+  --fade-stop: #0c0c0f;
+  --stat-bg: rgba(255, 255, 255, 0.06);
+  --stat-border: rgba(255, 255, 255, 0.1);
+  --card-shine: linear-gradient(140deg, rgba(255,255,255,0.04) 0%, transparent 55%);
+  --glass-bg: rgba(12, 12, 18, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
+
+[data-theme="light"] {
+  --bg: #ede8dc;
+  --bg-grad: radial-gradient(ellipse 90% 70% at 18% 0%, #faf7f0 0%, #ede8dc 55%);
+  --surface: #ffffff;
+  --surface-2: #f5f0e6;
+  --border: rgba(0, 0, 0, 0.08);
+  --text: #1a1714;
+  --text-dim: rgba(26, 23, 20, 0.52);
+  --fade-stop: #ede8dc;
+  --stat-bg: rgba(0, 0, 0, 0.05);
+  --stat-border: rgba(0, 0, 0, 0.1);
+  --card-shine: linear-gradient(140deg, rgba(255,255,255,0.7) 0%, transparent 55%);
+  --glass-bg: rgba(250, 247, 240, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.65);
+}
+
+html, body { height: 100%; }
 
 body {
   margin: 0;
-  padding: 1.5vh 2vw 2vh;
-  background: var(--wall-bg);
-  color: #eee;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  padding: 1.5vh 1.8vw 1.8vh;
+  background: var(--bg-grad);
+  color: var(--text);
+  font-family: var(--font);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* Background image mode */
+body.has-bg {
+  background: var(--bg);
+  background-size: cover;
+  background-position: center;
+}
+
+/* ── Header ── */
 header {
   flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 1vh;
   gap: 2vw;
-}
-
-h1 {
-  font-size: clamp(2.4rem, 4vw, 4.3rem);
-  line-height: 1.08;
-  margin: 0;
-  background: var(--accent-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 22px rgba(255, 140, 0, 0.25);
-  white-space: nowrap;
+  margin-bottom: var(--gap);
 }
 
 .logo {
-  height: 6.5vh;
-  max-height: 100px;
+  height: 7vh;
+  max-height: 110px;
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 6px rgba(0, 0, 0, .6));
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.45));
 }
 
-.admin-link {
-  color: #777;
+h1 {
+  font-size: clamp(2.6rem, 4.2vw, 5rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: var(--accent);
+  text-shadow: 0 0 50px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* ── Admin button – big, glowing, revealed on mouse move ── */
+.admin-btn {
+  position: fixed;
+  bottom: 3vh;
+  right: 2.5vw;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
-  font-size: .85rem;
-  position: absolute;
-  top: 1.2vh;
-  right: 2vw;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.75) translateY(10px);
+  transition: opacity .3s var(--ease), transform .3s var(--ease), box-shadow .2s var(--ease);
+  box-shadow:
+    0 4px 20px rgba(0,0,0,.4),
+    0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  z-index: 100;
 }
 
-.admin-link:hover {
-  color: #ffb400;
+.admin-btn svg {
+  width: 28px;
+  height: 28px;
+  stroke: #000;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 
+.admin-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1) translateY(0);
+  box-shadow:
+    0 6px 24px rgba(0,0,0,.5),
+    0 0 0 10px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 50px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 90px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.admin-btn:hover {
+  transform: scale(1.1) translateY(0);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,.55),
+    0 0 0 14px color-mix(in srgb, var(--accent) 28%, transparent),
+    0 0 65px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 0 110px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ── Smart grid (default mode) ── */
+.beer-grid {
+  flex: 1 1 auto;
+  display: grid;
+  gap: var(--gap);
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.beer-grid[data-cols="1"] { grid-template-columns: 1fr; }
+.beer-grid[data-cols="2"] { grid-template-columns: repeat(2, 1fr); }
+.beer-grid[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+.beer-grid[data-cols="4"] { grid-template-columns: repeat(4, 1fr); }
+
+/* ── Vertical layout: portrait cards side by side, all visible ── */
+.beer-vertical {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  gap: var(--gap);
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.beer-vertical .beer-card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ── Carousel (opt-in) ── */
 .carousel {
   position: relative;
   flex: 1 1 auto;
@@ -74,46 +183,65 @@ h1 {
 
 .carousel-track {
   display: flex;
-  gap: 1.4rem;
+  gap: var(--gap);
   align-items: stretch;
   will-change: transform;
 }
 
+.carousel-track:not(.is-scrolling) { justify-content: center; }
+
+/* Carousel: fill mode (few beers, no scroll needed) */
 .carousel-track:not(.is-scrolling) {
-  justify-content: center;
+  width: 100%;
 }
 
+.carousel-track:not(.is-scrolling) .beer-card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Carousel: scroll mode (cards overflow) */
+.carousel-track.is-scrolling .beer-card {
+  flex: 0 0 clamp(380px, 35vw, 580px);
+}
+
+/* ── Beer card – shared ── */
 .beer-card {
-  flex: 0 0 clamp(260px, 24vw, 370px);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 1fr auto;  /* image stretches, info bar always fits */
   position: relative;
-  padding: 1rem;
-  border-radius: 20px;
-  background: var(--card-bg);
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, .65);
-  border: 1px solid #26262c;
+  border-radius: clamp(14px, 1.5vw, 22px);
+  background: var(--surface);
+  border: 1px solid var(--border);
   overflow: hidden;
+  min-height: 0;
 }
 
-.beer-card:before {
+.beer-card::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 180, 0, 0.12), rgba(255, 123, 0, 0.05) 35%, transparent 60%);
-  mix-blend-mode: overlay;
+  background: var(--card-shine);
   pointer-events: none;
+  z-index: 1;
 }
 
+/* Glassmorphism override when background image active */
+body.has-bg .beer-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.7);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7);
+  border-color: var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+}
+
+/* ── Image ── */
 .image-wrap {
-  width: 100%;
-  aspect-ratio: 3/4;
-  border-radius: 14px;
-  background: #18181d center/cover no-repeat;
-  margin-bottom: .65rem;
   position: relative;
+  width: 100%;
   overflow: hidden;
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, .55);
+  background: var(--surface-2);
+  min-height: 0;  /* grid row 1fr handles sizing; never force info bar off-screen */
 }
 
 .image-wrap img {
@@ -121,115 +249,155 @@ h1 {
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: contrast(1.05) saturate(1.05);
 }
 
-.beer-header {
+/* ── Tap number badge (overlaid on image) ── */
+.tap-badge {
+  position: absolute;
+  top: clamp(0.5rem, 1vw, 1rem);
+  left: clamp(0.5rem, 1vw, 1rem);
+  background: color-mix(in srgb, var(--accent) 78%, transparent);
+  backdrop-filter: blur(10px) saturate(1.6);
+  -webkit-backdrop-filter: blur(10px) saturate(1.6);
+  color: #000;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, rgba(255,255,255,0.4));
+  font-size: clamp(1.6rem, 2.8vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.2em 0.35em;
+  border-radius: 10px;
+  box-shadow:
+    0 3px 16px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+  z-index: 2;
+  letter-spacing: -0.02em;
+}
+
+/* ── Price badge ── */
+.price-badge {
+  position: absolute;
+  bottom: clamp(0.5rem, 1vw, 1rem);
+  right: clamp(0.5rem, 1vw, 1rem);
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px) saturate(1.8);
+  -webkit-backdrop-filter: blur(18px) saturate(1.8);
+  color: var(--accent);
+  border: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  font-size: clamp(1.3rem, 2.4vw, 3rem);
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.25em 0.5em;
+  border-radius: 10px;
+  z-index: 2;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,.4),
+    0 0 14px color-mix(in srgb, var(--accent) 20%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+/* ── Text strip – grid row auto always shows fully ── */
+.beer-info {
+  padding: clamp(0.55rem, 1vw, 1rem) clamp(0.7rem, 1.2vw, 1.2rem);
   display: flex;
-  align-items: flex-start;
-  gap: .6rem;
-  margin-bottom: .25rem;
-}
-
-.beer-number {
-  font-size: 1.3rem;
-  font-weight: 600;
-  background: var(--accent-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  flex-direction: column;
+  gap: 0.22em;
 }
 
 .beer-name {
-  font-size: 1.55rem;
+  font-size: clamp(1.6rem, 2.5vw, 3.2rem);
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  line-height: 1.15;
   margin: 0;
-  font-weight: 650;
-  letter-spacing: .45px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .beer-style {
-  font-size: .72rem;
+  font-size: clamp(0.95rem, 1.2vw, 1.45rem);
   text-transform: uppercase;
-  letter-spacing: 1.3px;
-  opacity: .74;
-  margin-top: .18rem;
+  letter-spacing: 1.4px;
+  color: var(--text-dim);
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  min-height: 1.2em;  /* consistent even when blank */
 }
 
 .stats {
-  margin-top: auto;
   display: flex;
-  gap: .55rem;
+  gap: 0.4em;
   flex-wrap: wrap;
-  font-size: .75rem;
-  letter-spacing: .6px;
+  margin-top: 0.25em;
+  min-height: 2.2em;  /* consistent even when all stats are null */
 }
 
 .stat {
-  background: #232329;
-  padding: .5rem .7rem;
-  border-radius: 12px;
+  background: var(--stat-bg);
+  border: 1px solid var(--stat-border);
+  padding: 0.3em 0.65em;
+  border-radius: 7px;
+  font-size: clamp(1rem, 1.35vw, 1.6rem);
   display: flex;
   align-items: center;
-  gap: .35rem;
-  box-shadow: 0 0 0 1px #2d2d34;
+  gap: 0.3em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stat span {
-  font-weight: 600;
-  color: #fff;
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.75em;
+  letter-spacing: 0.5px;
 }
 
+/* ── Carousel fade edges ── */
 .fade-edge {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 7vw;
+  top: 0; bottom: 0;
+  width: 6vw;
   pointer-events: none;
   z-index: 5;
   display: none;
 }
+.fade-edge.active { display: block; }
+.fade-left  { left:  0; background: linear-gradient(90deg,  var(--fade-stop) 5%, transparent); }
+.fade-right { right: 0; background: linear-gradient(270deg, var(--fade-stop) 5%, transparent); }
 
-.fade-edge.active {
-  display: block;
+/* ── Responsive: small landscape ── */
+@media (max-width: 860px) {
+  h1 { font-size: clamp(1.6rem, 5.5vw, 2.8rem); }
+
+  .carousel-track .beer-card { flex: 0 0 clamp(200px, 38vw, 300px); }
+
+  .beer-grid[data-cols="4"] { grid-template-columns: repeat(3, 1fr); }
 }
 
-.fade-left {
-  left: 0;
-  background: linear-gradient(90deg, #0d0d0f 5%, rgba(13, 13, 15, 0));
+@media (max-width: 600px) {
+  .carousel-track .beer-card { flex: 0 0 clamp(180px, 55vw, 280px); }
+
+  .beer-grid[data-cols="3"],
+  .beer-grid[data-cols="4"] { grid-template-columns: repeat(2, 1fr); }
 }
 
-.fade-right {
-  right: 0;
-  background: linear-gradient(270deg, #0d0d0f 5%, rgba(13, 13, 15, 0));
+/* ── Responsive: portrait orientation ── */
+@media (orientation: portrait) {
+  /* Carousel: wider cards so 2-3 are visible */
+  .carousel-track .beer-card { flex: 0 0 clamp(200px, 44vw, 340px); }
+
+  /* Grid: never more than 2 cols unless user has many beers on a wide portrait screen */
+  .beer-grid[data-cols="3"] { grid-template-columns: repeat(2, 1fr); }
+  .beer-grid[data-cols="4"] { grid-template-columns: repeat(2, 1fr); }
+
+  h1 { font-size: clamp(1.6rem, 5vw, 3rem); }
 }
 
-/* Width fill logic for low beer counts */
-.carousel-track[data-count='1'] .beer-card {
-  flex: 0 0 80vw;
-}
-
-.carousel-track[data-count='2'] .beer-card {
-  flex: 0 0 45vw;
-}
-
-.carousel-track[data-count='3'] .beer-card {
-  flex: 0 0 30vw;
-}
-
-@media (max-width:900px) {
-  h1 {
-    font-size: clamp(1.8rem, 6.5vw, 3rem);
-  }
-
-  .beer-card {
-    flex: 0 0 clamp(230px, 60vw, 320px);
-  }
-
-  .carousel-track[data-count='2'] .beer-card {
-    flex: 0 0 48vw;
-  }
-
-  .carousel-track[data-count='3'] .beer-card {
-    flex: 0 0 32vw;
-  }
+@media (orientation: portrait) and (max-width: 500px) {
+  .beer-grid[data-cols="2"],
+  .beer-grid[data-cols="3"],
+  .beer-grid[data-cols="4"] { grid-template-columns: 1fr; }
 }

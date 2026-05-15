@@ -1,0 +1,22 @@
+<article class="beer-card">
+  <div class="image-wrap">
+    {% if beer.image_id %}
+    <img src="/images/{{ beer.image_id }}" alt="{{ beer.name }}" />
+    {% else %}
+    <img src="https://placehold.co/600x800?text={{ beer.name|urlencode }}" alt="{{ beer.name }}" />
+    {% endif %}
+    <div class="tap-badge">#{{ beer.tap_number }}</div>
+    {% if beer.price is not none %}
+    <div class="price-badge">{{ currency_sym }}{{ "%.2f"|format(beer.price) }}</div>
+    {% endif %}
+  </div>
+  <div class="beer-info">
+    <h2 class="beer-name">{{ beer.name }}</h2>
+    <div class="beer-style">{{ beer.style or '' }}</div>
+    <div class="stats">
+      {% if beer.abv is not none %}<div class="stat" title="Alcohol By Volume"><span>ABV</span> {{ "%.1f"|format(beer.abv) }}%</div>{% endif %}
+      {% if beer.ibu is not none %}<div class="stat" title="Bitterness Units"><span>IBU</span> {{ beer.ibu }}</div>{% endif %}
+      {% if beer.ebc is not none %}<div class="stat" title="Colour (EBC)"><span>EBC</span> {{ beer.ebc }}</div>{% endif %}
+    </div>
+  </div>
+</article>
